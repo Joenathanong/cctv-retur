@@ -165,14 +165,12 @@ export default function ImportPage() {
             className="bg-surface-muted border border-surface-border rounded px-2 py-1 text-xs text-slate-300 focus:outline-none w-28" />
           <button onClick={loadScans} className="text-xs text-accent hover:text-accent-hover">Cari</button>
           <span className="text-xs text-slate-600 ml-auto">{scans.total} record</span>
-          {scans.total > 0 && (
-            <button
-              onClick={openDeleteModal}
-              className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 transition-colors"
-            >
-              <Trash2 size={12} /> Hapus Semua
-            </button>
-          )}
+          <button
+            onClick={openDeleteModal}
+            className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 transition-colors"
+          >
+            <Trash2 size={12} /> Hapus Semua
+          </button>
         </div>
 
         <div className="bg-surface-card border border-surface-border rounded-lg overflow-hidden">
