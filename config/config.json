@@ -28,9 +28,9 @@
   "excel": {
     "watchDir": "D:/CCTV_Recording/Excel",
     "columns": {
-      "resi": "No. Pesanan/Resi",
-      "user": "Created By",
-      "scanTime": "Created Date"
+      "resi": "B",
+      "user": "J",
+      "scanTime": "K"
     }
   },
   "cameras": {
