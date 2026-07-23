@@ -39,7 +39,7 @@
   "cameras": {
     "CAM01": {
       "name": "Rifal Gunawan",
-      "ip": "192.168.23.163",
+      "ip": "192.168.21.153",
       "port": 554,
       "username": "admin",
       "password": "HEFEPU",
@@ -47,31 +47,31 @@
       "enabled": true
     },
     "CAM02": {
-      "name": "CAM02",
-      "ip": "192.168.30.17",
+      "name": "Yonathan",
+      "ip": "192.168.21.152",
       "port": 554,
       "username": "admin",
-      "password": "password123",
+      "password": "Password123",
       "rtspPath": "/h264/ch1/main/av_stream",
-      "enabled": false
+      "enabled": true
     },
     "CAM03": {
-      "name": "CAM03",
-      "ip": "192.168.30.17",
+      "name": "Muhamad Solihin",
+      "ip": "192.168.21.227",
       "port": 554,
       "username": "admin",
-      "password": "password123",
+      "password": "Password123",
       "rtspPath": "/h264/ch1/main/av_stream",
-      "enabled": false
+      "enabled": true
     },
     "CAM04": {
-      "name": "CAM04",
-      "ip": "192.168.30.17",
+      "name": "Rizky Azdi",
+      "ip": "192.168.21.154",
       "port": 554,
       "username": "admin",
-      "password": "password123",
+      "password": "Password123",
       "rtspPath": "/h264/ch1/main/av_stream",
-      "enabled": false
+      "enabled": true
     }
   },
   "userCameraMapping": {
@@ -79,7 +79,10 @@
     "Bongkar02": "CAM02",
     "Bongkar03": "CAM03",
     "Bongkar04": "CAM04",
-    "Rifal Gunawan": "CAM01"
+    "Rifal Gunawan": "CAM01",
+    "Yonathan": "CAM02",
+    "Muhamad Solihin": "CAM03",
+    "Rizky Azdi": "CAM04"
   },
   "ffmpeg": {
     "path": "C:\\ffmpeg\\bin\\ffmpeg.exe",
