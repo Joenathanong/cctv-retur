@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Upload, CheckCircle, AlertCircle, FileSpreadsheet, Loader, Trash2, X } from 'lucide-react';
 
 export default function ImportPage() {
@@ -87,7 +87,7 @@ export default function ImportPage() {
     setDeleting(false);
   };
 
-  useState(() => { loadScans(); }, []);
+  useEffect(() => { loadScans(); }, []);
 
   return (
     <div className="space-y-5">
