@@ -1,0 +1,99 @@
+{
+  "server": {
+    "port": 3001,
+    "host": "0.0.0.0"
+  },
+  "recording": {
+    "baseDir": "D:/CCTV_Recording",
+    "segmentMinutes": 30,
+    "retentionDays": 30,
+    "defaultLastDurationSeconds": 30,
+    "noAudio": true,
+    "compression": {
+      "enabled": false,
+      "encoder": "nvenc",
+      "resolution": "original",
+      "crf": 28,
+      "preset": "fast"
+    }
+  },
+  "export": {
+    "dir": "D:/CCTV_Recording/Export",
+    "startBuffer": 5,
+    "endBuffer": 300
+  },
+  "database": {
+    "path": "D:/CCTV_Recording/Database/warehouse.db"
+  },
+  "logs": {
+    "dir": "D:/CCTV_Recording/Logs"
+  },
+  "excel": {
+    "watchDir": "D:/CCTV_Recording/Excel",
+    "columns": {
+      "resi": "No. Pesanan/Resi",
+      "user": "Created By",
+      "scanTime": "Created Date"
+    }
+  },
+  "cameras": {
+    "CAM01": {
+      "name": "Rifal Gunawan",
+      "ip": "192.168.23.163",
+      "port": 554,
+      "username": "admin",
+      "password": "HEFEPU",
+      "rtspPath": "/h264/ch1/main/av_stream",
+      "enabled": true
+    },
+    "CAM02": {
+      "name": "CAM02",
+      "ip": "192.168.30.17",
+      "port": 554,
+      "username": "admin",
+      "password": "password123",
+      "rtspPath": "/h264/ch1/main/av_stream",
+      "enabled": false
+    },
+    "CAM03": {
+      "name": "CAM03",
+      "ip": "192.168.30.17",
+      "port": 554,
+      "username": "admin",
+      "password": "password123",
+      "rtspPath": "/h264/ch1/main/av_stream",
+      "enabled": false
+    },
+    "CAM04": {
+      "name": "CAM04",
+      "ip": "192.168.30.17",
+      "port": 554,
+      "username": "admin",
+      "password": "password123",
+      "rtspPath": "/h264/ch1/main/av_stream",
+      "enabled": false
+    }
+  },
+  "userCameraMapping": {
+    "Bongkar01": "CAM01",
+    "Bongkar02": "CAM02",
+    "Bongkar03": "CAM03",
+    "Bongkar04": "CAM04",
+    "Rifal Gunawan": "CAM01"
+  },
+  "ffmpeg": {
+    "path": "C:\\ffmpeg\\bin\\ffmpeg.exe",
+    "rtspTransport": "tcp",
+    "reconnectDelay": 15000,
+    "maxReconnectDelay": 300000,
+    "maxReconnectAttempts": 0
+  },
+  "monitoring": {
+    "healthCheckIntervalSeconds": 30,
+    "storageCheckIntervalMinutes": 10
+  },
+  "operationalHours": {
+    "start": "08:00",
+    "end": "24:00"
+  }
+}
