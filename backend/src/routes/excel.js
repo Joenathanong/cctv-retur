@@ -43,6 +43,22 @@ router.post('/import-path', (req, res) => {
   }
 });
 
+// DELETE /api/excel/scans/all  { password: "..." }
+// Hapus semua data scan_logs (untuk upload ulang dari awal).
+router.delete('/scans/all', (req, res) => {
+  try {
+    const { password } = req.body;
+    if (password !== 'IEGp@ssw0rd') {
+      return res.status(401).json({ error: 'Password salah' });
+    }
+    const db = getDb();
+    const result = db.prepare(`DELETE FROM scan_logs`).run();
+    res.json({ ok: true, deleted: result.changes });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /api/excel/scans?date=YYYY-MM-DD&user=Bongkar01&page=1&limit=100
 router.get('/scans', (req, res) => {
   try {

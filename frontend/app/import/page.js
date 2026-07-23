@@ -1,16 +1,23 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Upload, CheckCircle, AlertCircle, FileSpreadsheet, Loader } from 'lucide-react';
+import { Upload, CheckCircle, AlertCircle, FileSpreadsheet, Loader, Trash2, X } from 'lucide-react';
 
 export default function ImportPage() {
-  const [file, setFile] = useState(null);
-  const [result, setResult] = useState(null);
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [scans, setScans] = useState({ total: 0, data: [] });
+  const [file, setFile]         = useState(null);
+  const [result, setResult]     = useState(null);
+  const [error, setError]       = useState(null);
+  const [loading, setLoading]   = useState(false);
+  const [scans, setScans]       = useState({ total: 0, data: [] });
   const [scanFilters, setScanFilters] = useState({ date: '', user: '' });
   const inputRef = useRef();
+
+  // Delete All modal
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletePassword, setDeletePassword]   = useState('');
+  const [deleteError, setDeleteError]         = useState('');
+  const [deleting, setDeleting]               = useState(false);
+  const [deleteResult, setDeleteResult]       = useState(null);
 
   const handleDrop = (e) => {
     e.preventDefault();
@@ -40,11 +47,44 @@ export default function ImportPage() {
   };
 
   const loadScans = async () => {
-    const p = new URLSearchParams({ limit: 200, ...Object.fromEntries(Object.entries(scanFilters).filter(([, v]) => v)) });
+    const p = new URLSearchParams({
+      limit: 200,
+      ...Object.fromEntries(Object.entries(scanFilters).filter(([, v]) => v))
+    });
     try {
       const r = await fetch(`/api/excel/scans?${p}`);
       setScans(await r.json());
     } catch (_) {}
+  };
+
+  const openDeleteModal = () => {
+    setDeletePassword('');
+    setDeleteError('');
+    setDeleteResult(null);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteAll = async (e) => {
+    e.preventDefault();
+    setDeleteError('');
+    setDeleting(true);
+    try {
+      const r = await fetch('/api/excel/scans/all', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: deletePassword })
+      });
+      const d = await r.json();
+      if (!r.ok) {
+        setDeleteError(d.error || 'Gagal menghapus');
+      } else {
+        setDeleteResult(d);
+        setScans({ total: 0, data: [] });
+      }
+    } catch (err) {
+      setDeleteError(err.message);
+    }
+    setDeleting(false);
   };
 
   useState(() => { loadScans(); }, []);
@@ -115,7 +155,7 @@ export default function ImportPage() {
 
       {/* Scan log table */}
       <div>
-        <div className="flex items-center gap-3 mb-3">
+        <div className="flex items-center gap-3 mb-3 flex-wrap">
           <p className="text-sm font-medium text-slate-300">Data Scan</p>
           <input type="date" value={scanFilters.date}
             onChange={(e) => setScanFilters((f) => ({ ...f, date: e.target.value }))}
@@ -125,6 +165,14 @@ export default function ImportPage() {
             className="bg-surface-muted border border-surface-border rounded px-2 py-1 text-xs text-slate-300 focus:outline-none w-28" />
           <button onClick={loadScans} className="text-xs text-accent hover:text-accent-hover">Cari</button>
           <span className="text-xs text-slate-600 ml-auto">{scans.total} record</span>
+          {scans.total > 0 && (
+            <button
+              onClick={openDeleteModal}
+              className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 transition-colors"
+            >
+              <Trash2 size={12} /> Hapus Semua
+            </button>
+          )}
         </div>
 
         <div className="bg-surface-card border border-surface-border rounded-lg overflow-hidden">
@@ -164,6 +212,70 @@ export default function ImportPage() {
           </table>
         </div>
       </div>
+
+      {/* ── Delete All Modal ─────────────────────────────────────────────── */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+          <div className="bg-surface-card border border-surface-border rounded-xl p-6 w-full max-w-sm shadow-xl space-y-4">
+            <div className="flex items-center justify-between">
+              <p className="font-semibold text-white flex items-center gap-2">
+                <Trash2 size={16} className="text-red-400" />
+                Hapus Semua Data Import
+              </p>
+              <button onClick={() => setShowDeleteModal(false)} className="text-slate-500 hover:text-white transition-colors">
+                <X size={16} />
+              </button>
+            </div>
+
+            {!deleteResult ? (
+              <>
+                <p className="text-xs text-slate-400">
+                  Semua data resi yang sudah diimport akan dihapus permanen dari database. Setelah ini Anda bisa upload ulang Excel dari awal. Masukkan password untuk konfirmasi.
+                </p>
+                <form onSubmit={handleDeleteAll} className="space-y-3">
+                  <input
+                    type="password"
+                    value={deletePassword}
+                    onChange={(e) => setDeletePassword(e.target.value)}
+                    placeholder="Password"
+                    autoFocus
+                    className="w-full bg-surface-muted border border-surface-border rounded-lg px-3 py-2 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-red-500"
+                  />
+                  {deleteError && <p className="text-xs text-red-400">{deleteError}</p>}
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowDeleteModal(false)}
+                      className="flex-1 px-4 py-2 text-sm text-slate-400 border border-surface-border rounded-lg hover:text-white transition-colors"
+                    >
+                      Batal
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={!deletePassword || deleting}
+                      className="flex-1 px-4 py-2 text-sm text-white bg-red-600 hover:bg-red-500 rounded-lg transition-colors disabled:opacity-50"
+                    >
+                      {deleting ? 'Menghapus...' : 'Hapus Semua'}
+                    </button>
+                  </div>
+                </form>
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-green-400">
+                  Berhasil menghapus {deleteResult.deleted} record. Silakan upload Excel ulang.
+                </p>
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  className="w-full px-4 py-2 text-sm text-white bg-accent hover:bg-accent-hover rounded-lg transition-colors"
+                >
+                  Tutup
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
