@@ -65,7 +65,6 @@ export default function ConfigPage() {
         <Field label="Base Dir" value={cfg.recording.baseDir} onChange={(v) => update('recording.baseDir', v)} />
         <Field label="Segment (menit)" type="number" value={cfg.recording.segmentMinutes} onChange={(v) => update('recording.segmentMinutes', +v)} />
         <Field label="Retensi (hari)" type="number" value={cfg.recording.retentionDays} onChange={(v) => update('recording.retentionDays', +v)} />
-        <Field label="Default Last Duration (detik)" type="number" value={cfg.recording.defaultLastDurationSeconds} onChange={(v) => update('recording.defaultLastDurationSeconds', +v)} />
         {/* No Audio Toggle */}
         <div className="md:col-span-2">
           <div className="flex items-center justify-between bg-surface-muted border border-surface-border rounded-lg px-4 py-3">
@@ -97,33 +96,6 @@ export default function ConfigPage() {
       <Section title="Export & Excel">
         <Field label="Export Dir" value={cfg.export.dir} onChange={(v) => update('export.dir', v)} />
         <Field label="Excel Watch Dir" value={cfg.excel.watchDir} onChange={(v) => update('excel.watchDir', v)} />
-        <Field label="Buffer Awal Scan (detik)" type="number" value={cfg.export?.startBuffer ?? 5} onChange={(v) => update('export.startBuffer', +v)} />
-
-        {/* End-of-shift buffer slider — full width */}
-        <div className="md:col-span-2 space-y-1">
-          <div className="flex items-center justify-between">
-            <label className="text-xs text-slate-500">Buffer Akhir Shift</label>
-            <span className="text-xs font-mono text-slate-300">
-              {cfg.export?.endBuffer ?? 300}s&nbsp;
-              <span className="text-slate-500">({fmtDuration(cfg.export?.endBuffer ?? 300)})</span>
-            </span>
-          </div>
-          <input
-            type="range" min={30} max={600} step={30}
-            value={cfg.export?.endBuffer ?? 300}
-            onChange={(e) => update('export.endBuffer', +e.target.value)}
-            className="w-full accent-accent"
-          />
-          <div className="flex justify-between text-[10px] text-slate-600">
-            <span>30 dtk</span>
-            <span>5 menit</span>
-            <span>10 menit</span>
-          </div>
-          <p className="text-[10px] text-slate-600 mt-1">
-            Durasi video setelah scan terakhir, jika tidak ada resi berikutnya di shift yang sama.
-          </p>
-        </div>
-
         <Field label="Kolom Resi (huruf/nama)" value={cfg.excel.columns.resi} onChange={(v) => update('excel.columns.resi', v)} placeholder="contoh: B" />
         <Field label="Kolom User (huruf/nama)" value={cfg.excel.columns.user} onChange={(v) => update('excel.columns.user', v)} placeholder="contoh: J" />
         <Field label="Kolom Scan Time (huruf/nama)" value={cfg.excel.columns.scanTime} onChange={(v) => update('excel.columns.scanTime', v)} placeholder="contoh: K" />

@@ -32,22 +32,21 @@ async function exportByResi(resi) {
   const { camera, user, scan_date: date, start_time: startStr, end_time: endStr } = scan;
   if (!date || !startStr) throw new Error(`Scan record for ${resi} missing date/time`);
 
-  const startBuffer = cfg.export?.startBuffer ?? 5;   // seconds before first scan
-  const endBuffer   = cfg.export?.endBuffer   ?? 300; // seconds after last scan (end-of-shift)
+  // Fixed buffers — not configurable:
+  //   3s before first scan  (give context before courier starts scanning)
+  //  60s fallback if no next resi found (end of shift / last resi of day)
+  const START_BUFFER   = 3;
+  const FALLBACK_SECS  = 60;
 
   const rawStartSec = timeStr2sec(startStr);
-  // endStr null = single-item resi (no MAX range); treat same as startStr
   const rawEndSec   = timeStr2sec(endStr || startStr);
-
-  // Video starts a few seconds BEFORE the first scan
-  const startSec = Math.max(0, rawStartSec - startBuffer);
+  const startSec    = Math.max(0, rawStartSec - START_BUFFER);
 
   logger.info(`[Export] ${resi}: user="${user}" cam=${camera} date=${date} start=${startStr} end=${endStr || 'NULL'}`);
-  logger.info(`[Export] ${resi}: rawStart=${secToTimeStr(rawStartSec)} rawEnd=${secToTimeStr(rawEndSec)} startBuf=${startBuffer}s endBuf=${endBuffer}s`);
 
-  // Find the next different resi scanned by the SAME USER on the same date.
-  // Use LOWER() for case-insensitive match in case user name casing differs between imports.
-  // Fallback to camera-based query if user is empty/null.
+  // Find the next resi scanned by the SAME USER on the same date.
+  // LOWER() = case-insensitive so "Rifal Gunawan" matches "rifal gunawan".
+  // Fallback to camera if user is empty/null.
   const refTime = endStr || startStr;
   let nextScan = null;
 
@@ -60,27 +59,24 @@ async function exportByResi(resi) {
     logger.info(`[Export] ${resi}: nextScan by user "${user}" after ${refTime} → ${nextScan ? `${nextScan.resi} @ ${nextScan.start_time}` : 'NOT FOUND'}`);
   }
 
-  // Fallback: if user is empty or no match found, use camera-based next scan
   if (!nextScan && camera) {
     nextScan = db.prepare(`
       SELECT start_time, resi FROM scan_logs
       WHERE camera = ? AND scan_date = ? AND start_time > ? AND resi != ?
       ORDER BY start_time ASC LIMIT 1
     `).get(camera, date, refTime, resi);
-    logger.info(`[Export] ${resi}: nextScan fallback by camera "${camera}" after ${refTime} → ${nextScan ? `${nextScan.resi} @ ${nextScan.start_time}` : 'NOT FOUND'}`);
+    logger.info(`[Export] ${resi}: nextScan fallback by camera "${camera}" → ${nextScan ? `${nextScan.resi} @ ${nextScan.start_time}` : 'NOT FOUND'}`);
   }
 
   let endSec;
   if (nextScan) {
-    // End at next resi's scan time OR rawEnd + endBuffer, whichever is sooner.
-    // Prevents huge clips when the next resi is hours away (break / end of shift).
-    const nextStartSec = timeStr2sec(nextScan.start_time);
-    endSec = Math.max(rawEndSec + 5, Math.min(nextStartSec, rawEndSec + endBuffer));
-    logger.info(`[Export] ${resi}: nextStartSec=${secToTimeStr(nextStartSec)} → endSec capped at ${secToTimeStr(endSec)}`);
+    // End exactly when user starts scanning the next resi
+    endSec = timeStr2sec(nextScan.start_time);
+    logger.info(`[Export] ${resi}: end = next resi ${nextScan.resi} @ ${nextScan.start_time}`);
   } else {
-    // No next resi — add configurable buffer after the last scan
-    endSec = rawEndSec + endBuffer;
-    logger.info(`[Export] ${resi}: no nextScan → endSec = rawEnd + ${endBuffer}s = ${secToTimeStr(endSec)}`);
+    // No next resi (last of shift / day) — small fixed fallback only
+    endSec = rawEndSec + FALLBACK_SECS;
+    logger.warn(`[Export] ${resi}: no next resi found → fallback end = ${secToTimeStr(endSec)} (+${FALLBACK_SECS}s)`);
   }
 
   const duration = endSec - startSec;
@@ -194,17 +190,31 @@ function searchResi(resi) {
   if (!scan) return null;
 
   const cfg = config.get();
-  const { camera, scan_date: date, start_time: startStr, end_time: endStr } = scan;
-
-  const startBuffer = cfg.export?.startBuffer ?? 5;
-  const endBuffer   = cfg.export?.endBuffer   ?? 300;
+  const { camera, user, scan_date: date, start_time: startStr, end_time: endStr } = scan;
 
   const rawStartSec = timeStr2sec(startStr);
   const rawEndSec   = timeStr2sec(endStr || startStr);
+  const startSec    = Math.max(0, rawStartSec - 3);
 
-  // Generous window for video availability check
-  const startSec   = Math.max(0, rawStartSec - startBuffer);
-  const endSec     = rawEndSec + endBuffer;
+  // Find next resi to determine real end time (same logic as exportByResi)
+  const refTime = endStr || startStr;
+  let nextScan = null;
+  if (user) {
+    nextScan = db.prepare(`
+      SELECT start_time FROM scan_logs
+      WHERE LOWER(user) = LOWER(?) AND scan_date = ? AND start_time > ? AND resi != ?
+      ORDER BY start_time ASC LIMIT 1
+    `).get(user, date, refTime, resi);
+  }
+  if (!nextScan && camera) {
+    nextScan = db.prepare(`
+      SELECT start_time FROM scan_logs
+      WHERE camera = ? AND scan_date = ? AND start_time > ? AND resi != ?
+      ORDER BY start_time ASC LIMIT 1
+    `).get(camera, date, refTime, resi);
+  }
+
+  const endSec     = nextScan ? timeStr2sec(nextScan.start_time) : rawEndSec + 60;
   const segSeconds = cfg.recording.segmentMinutes * 60;
 
   const segments = getRecordingFiles(camera, date);
@@ -213,7 +223,8 @@ function searchResi(resi) {
     return segEnd > startSec && seg.startSeconds < endSec;
   });
 
-  return { ...scan, hasVideo, endTime: endStr || secToTimeStr(rawEndSec + endBuffer) };
+  const displayEnd = nextScan ? nextScan.start_time : secToTimeStr(rawEndSec + 60);
+  return { ...scan, hasVideo, endTime: endStr || displayEnd };
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
